@@ -1,0 +1,57 @@
+{% extends "base.html" %}
+{% block content %}
+<h1>New post</h1>
+<div class="compose">
+  <form method="post" class="card form">
+    <label>Image URL <small class="muted">(public https link; Instagram downloads it from there)</small>
+      <input name="image_url" id="image_url" type="url" required value="{{ form.get('image_url', '') }}">
+    </label>
+    <img id="preview" alt="">
+    <label>Caption
+      <textarea name="caption" id="caption" rows="7" maxlength="2200">{{ form.get('caption', '') }}</textarea>
+    </label>
+    <label>Schedule for <small class="muted">(leave empty to publish now)</small>
+      <input name="publish_at" type="datetime-local" value="{{ form.get('publish_at', '') }}">
+    </label>
+    <button type="submit">Publish / schedule</button>
+  </form>
+
+  <div class="card form">
+    <h2>Draft a caption with Claude</h2>
+    {% if not claude_enabled %}<p class="muted">Set <code>ANTHROPIC_API_KEY</code> for real drafts. Placeholder text is used until then.</p>{% endif %}
+    <label>What's the post about?
+      <textarea id="description" rows="4" placeholder="e.g. sunrise hike up Mt. Tam with my dog, first time this year"></textarea>
+    </label>
+    <label>Tone
+      <select id="tone">
+        <option>friendly</option><option>playful</option><option>professional</option>
+        <option>inspirational</option><option>minimal</option>
+      </select>
+    </label>
+    <label class="inline"><input type="checkbox" id="hashtags" checked> Include hashtags</label>
+    <button type="button" id="draft" class="secondary">Draft caption</button>
+  </div>
+</div>
+{% endblock %}
+{% block scripts %}
+<script>
+const img = document.getElementById("image_url"), preview = document.getElementById("preview");
+const showPreview = () => { preview.src = img.value; preview.style.display = img.value ? "block" : "none"; };
+img.addEventListener("change", showPreview); showPreview();
+
+document.getElementById("draft").addEventListener("click", async (e) => {
+  const btn = e.target, description = document.getElementById("description").value.trim();
+  if (!description) return alert("Describe the post first.");
+  btn.disabled = true; btn.textContent = "Drafting…";
+  try {
+    const res = await fetch("{{ url_for('api_draft_caption') }}", {
+      method: "POST", headers: {"Content-Type": "application/json"},
+      body: JSON.stringify({description, tone: document.getElementById("tone").value,
+                            hashtags: document.getElementById("hashtags").checked}),
+    });
+    const data = await res.json();
+    if (data.error) alert(data.error); else document.getElementById("caption").value = data.text;
+  } finally { btn.disabled = false; btn.textContent = "Draft caption"; }
+});
+</script>
+{% endblock %}

@@ -1,0 +1,8 @@
+{% extends "base.html" %}
+{% block content %}
+<div class="card">
+  <h1>Instagram returned an error</h1>
+  <p class="error">{{ message }}</p>
+  <p class="muted">Check that your access token hasn't expired and that IG_USER_ID is your Instagram Business Account ID (not your Facebook Page ID).</p>
+</div>
+{% endblock %}

@@ -1,0 +1,56 @@
+{% extends "base.html" %}
+{% block content %}
+<a href="{{ url_for('dashboard') }}">&larr; Back</a>
+<section class="post-detail">
+  <img class="card" src="{{ post.thumbnail_url or post.media_url }}" alt="">
+  <div>
+    <p class="caption-full">{{ post.caption }}</p>
+    <p class="muted">{{ post.timestamp[:16].replace("T", " ") }} · <a href="{{ post.permalink }}" target="_blank" rel="noopener">View on Instagram</a></p>
+    <div class="stats">
+      <div class="card stat"><span>Likes</span><strong>{{ post.like_count or 0 }}</strong></div>
+      <div class="card stat"><span>Comments</span><strong>{{ post.comments_count or 0 }}</strong></div>
+      {% for name, value in insights.items() %}
+      <div class="card stat"><span>{{ name|capitalize }}</span><strong>{{ "{:,}".format(value) }}</strong></div>
+      {% endfor %}
+    </div>
+  </div>
+</section>
+
+<h2>Comments</h2>
+{% for c in comments %}
+<div class="card comment">
+  <p><strong>@{{ c.username }}</strong> {{ c.text }} <span class="muted">{{ c.timestamp[:10] }}</span></p>
+  {% for r in (c.replies or {}).get("data", []) %}
+  <p class="reply"><strong>@{{ r.username }}</strong> {{ r.text }}</p>
+  {% endfor %}
+  <form method="post" action="{{ url_for('reply', comment_id=c.id) }}" class="reply-form">
+    <input type="hidden" name="media_id" value="{{ post.id }}">
+    <input name="message" placeholder="Write a reply…" required>
+    <button type="button" class="secondary draft-reply"
+            data-comment="{{ c.text }}" data-username="{{ c.username }}">Draft with Claude</button>
+    <button type="submit">Reply</button>
+  </form>
+</div>
+{% else %}
+<p class="muted">No comments yet.</p>
+{% endfor %}
+{% endblock %}
+{% block scripts %}
+<script>
+const caption = {{ (post.caption or "")|tojson }};
+document.querySelectorAll(".draft-reply").forEach(btn => {
+  btn.addEventListener("click", async () => {
+    const input = btn.form.querySelector("input[name=message]");
+    btn.disabled = true; btn.textContent = "Drafting…";
+    try {
+      const res = await fetch("{{ url_for('api_draft_reply') }}", {
+        method: "POST", headers: {"Content-Type": "application/json"},
+        body: JSON.stringify({caption, comment: btn.dataset.comment, username: btn.dataset.username}),
+      });
+      const data = await res.json();
+      if (data.error) alert(data.error); else input.value = data.text;
+    } finally { btn.disabled = false; btn.textContent = "Draft with Claude"; }
+  });
+});
+</script>
+{% endblock %}

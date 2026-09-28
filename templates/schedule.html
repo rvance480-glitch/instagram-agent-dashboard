@@ -1,0 +1,22 @@
+{% extends "base.html" %}
+{% block content %}
+<h1>Scheduled posts</h1>
+<p class="muted">Checked once a minute while the app is running. Posts only go out if the app is running when they're due.</p>
+{% for i in items %}
+<div class="card scheduled">
+  <img src="{{ i.image_url }}" alt="">
+  <div>
+    <p><strong>{{ i.publish_at.replace("T", " ") }}</strong> · <span class="status {{ i.status }}">{{ i.status }}</span></p>
+    <p class="caption">{{ i.caption|truncate(200) }}</p>
+    {% if i.error %}<p class="error">{{ i.error }}</p>{% endif %}
+  </div>
+  {% if i.status != "published" %}
+  <form method="post" action="{{ url_for('cancel_scheduled', item_id=i.id) }}">
+    <button class="secondary">Remove</button>
+  </form>
+  {% endif %}
+</div>
+{% else %}
+<p class="muted">Nothing scheduled. <a href="{{ url_for('compose') }}">Create a post</a>.</p>
+{% endfor %}
+{% endblock %}

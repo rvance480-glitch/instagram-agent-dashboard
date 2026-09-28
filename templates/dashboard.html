@@ -1,0 +1,36 @@
+{% extends "base.html" %}
+{% block content %}
+<section class="profile card">
+  <img class="avatar" src="{{ profile.profile_picture_url }}" alt="">
+  <div>
+    <h1>@{{ profile.username }}</h1>
+    <p class="muted">{{ profile.name }}</p>
+    <p>{{ profile.biography }}</p>
+  </div>
+</section>
+
+<section class="stats">
+  <div class="card stat"><span>Followers</span><strong>{{ "{:,}".format(profile.followers_count or 0) }}</strong></div>
+  <div class="card stat"><span>Following</span><strong>{{ "{:,}".format(profile.follows_count or 0) }}</strong></div>
+  <div class="card stat"><span>Posts</span><strong>{{ "{:,}".format(profile.media_count or 0) }}</strong></div>
+  <div class="card stat"><span>Likes (last {{ media|length }})</span><strong>{{ "{:,}".format(total_likes) }}</strong></div>
+  <div class="card stat"><span>Comments (last {{ media|length }})</span><strong>{{ "{:,}".format(total_comments) }}</strong></div>
+  <div class="card stat"><span>Avg. engagement</span><strong>{{ "%.2f"|format(avg_engagement) }}%</strong></div>
+</section>
+
+<h2>Recent posts</h2>
+<section class="grid">
+  {% for m in media %}
+  <a class="card post" href="{{ url_for('post_detail', media_id=m.id) }}">
+    <img src="{{ m.thumbnail_url or m.media_url }}" alt="" loading="lazy">
+    <div class="post-meta">
+      <span>♥ {{ m.like_count or 0 }}</span><span>💬 {{ m.comments_count or 0 }}</span>
+      <span class="muted">{{ m.timestamp[:10] }}</span>
+    </div>
+    <p class="caption">{{ (m.caption or "")|truncate(90) }}</p>
+  </a>
+  {% else %}
+  <p class="muted">No posts yet.</p>
+  {% endfor %}
+</section>
+{% endblock %}
